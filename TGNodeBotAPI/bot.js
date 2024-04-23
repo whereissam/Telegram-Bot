@@ -7,12 +7,8 @@ const bot = new TelegramBot(token, { polling: true });
 bot.on('message', async (msg) => {
   // console.log(msg)
     const chatId = msg.chat.id;
-    const user_id = msg.from.id;
     const messageText = msg.text
-    const ChatMember = await bot.getChatMember(chatId, user_id); //check user is member
     const originalText = msg.message_id
-
-    console.log(messageText)
   
     if (messageText === '/start@testingfortgcrmbot') {
         bot.sendMessage(chatId, 'Welcome to the bot!');
