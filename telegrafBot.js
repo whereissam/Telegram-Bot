@@ -190,4 +190,7 @@ bot.start(async (ctx) => {
      }
    );
  });
+
+ bot.help((ctx) => ctx.reply('Send me a sticker'))
+ 
 bot.launch();
