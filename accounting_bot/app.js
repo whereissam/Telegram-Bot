@@ -5,6 +5,12 @@ const token = process.env.TG_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 let fixRate = null
 
+let dailyTotalAmount = 0; //入款金額
+let numberOfEntries = 0; // 入帳比數
+let shouldBeIssued = 0; // 應下發金額
+let issued = 0; // 已下發金額
+let unissued = 0; // 未下發金額
+
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const messageText = msg.text
@@ -39,6 +45,19 @@ bot.on('message', async (msg) => {
                             bot.sendMessage(chatId, `Receive amount successfully, current exchange rate is ${fixRate} %`, {
                                 reply_to_message_id: originalText
                             })
+                            dailyTotalAmount = (parseFloat(dailyTotalAmount) + parseFloat(amountReceived)).toString();
+                            shouldBeIssued = (parseFloat(dailyTotalAmount) / parseFloat(fixRate)).toFixed(2);
+                            unissued = (parseFloat(shouldBeIssued) - parseFloat(issued)).toFixed(2);
+                            numberOfEntries += 1;
+
+                            await sendPaymentTemplate(
+                                chatId,
+                                dailyTotalAmount,
+                                shouldBeIssued,
+                                issued,
+                                unissued,
+                                numberOfEntries
+                            )
                         }else{
                             bot.sendMessage(chatId, `Set Exchange first`, {
                                 reply_to_message_id: originalText
@@ -54,3 +73,37 @@ bot.on('message', async (msg) => {
     console.log('handle commend error', err)
     }
 });
+
+// set response module
+function sendPaymentTemplate(
+    chatId,
+    dailyTotalAmount,
+    shouldBeIssued,
+    issued,
+    unissued,
+    numberOfEntries
+) {
+    const keyboard = {
+        inline_keyboard: [
+            [
+                {text: "Message", url: "https://t.me/jfdsia"},
+                {text: "Message", url: "https://t.me/jfdsia"},
+            ]
+        ]
+    }
+
+    const message = `<a href = "https://t.me/theblockspaces"> 電報頻道 </a>
+        <b>Daily Total (${numberOfEntries} amount: )</b>
+        <b>Total amount: </b>${dailyTotalAmount} 
+        <b>Rate: </b> ${fixRate}
+        <b>FixRate: </b>${fixRate} 
+        <b>Should be issued: </b>${shouldBeIssued} (USDT)
+        <b>Issued: </b>${issued} (USDT)
+        <b>Unissued: </b> ${unissued} (USDT)
+    `;
+
+    bot.sendMessage(chatId, message, {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+    })
+}
